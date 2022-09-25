@@ -52,7 +52,7 @@ class TicTacToeGame {
       this.cells[index] = this.O_VALUE;
     }
 
-    this.isWon = this.checkWin();
+    this.isWon = this.checkWin(this.cells, this.xTurn);
     if (!this.isWon) {
       this.xTurn = !this.xTurn;
     }
@@ -104,14 +104,14 @@ class TicTacToeGame {
     this.renderInfo();
   }
 
-  checkWin() {
+  checkWin(cells, xTurn) {
     const position = [];
     const filled = [];
-    const currVal = this.xTurn ? this.X_VALUE : this.O_VALUE;
-    for (let i = 0; i < this.cells.length; i++) {
-      if (this.cells[i] !== this.EMPTY) {
+    const currVal = xTurn ? this.X_VALUE : this.O_VALUE;
+    for (let i = 0; i < cells.length; i++) {
+      if (cells[i] !== this.EMPTY) {
         filled.push(i);
-        if (this.cells[i] === currVal) {
+        if (cells[i] === currVal) {
           position.push(i);
         }
       }
@@ -123,7 +123,7 @@ class TicTacToeGame {
       }
     }
 
-    if (filled.length === this.cells.length) {
+    if (filled.length === cells.length) {
       return this.EMPTY;
     }
 
@@ -137,14 +137,109 @@ class TicTacToeGame {
     this.initCells();
     this.render();
   }
+
+  evaluate(xTurn) {
+    const win = this.checkWin(this.cells, xTurn);
+    // console.log(this.debugCells(), this.debugCell(win));
+    if (win === this.X_VALUE) {
+      return 1;
+    } else if (win === this.O_VALUE) {
+      return -1;
+    } else if (win === this.EMPTY) {
+      return 0;
+    }
+
+    if (xTurn) {
+      let max = -Infinity;
+      for (let i = 0; i < this.cells.length; i++) {
+        if (this.cells[i] === this.EMPTY) {
+          this.cells[i] = this.X_VALUE;
+          const score = this.evaluate(!xTurn);
+          this.cells[i] = this.EMPTY;
+          max = Math.max(max, score);
+        }
+      }
+      return max;
+    } else {
+      let min = Infinity;
+      for (let i = 0; i < this.cells.length; i++) {
+        if (this.cells[i] === this.EMPTY) {
+          this.cells[i] = this.O_VALUE;
+          const score = this.evaluate(!xTurn);
+          this.cells[i] = this.EMPTY;
+          min = Math.min(min, score);
+        }
+      }
+      return min;
+    }
+  }
+
+  bestMove() {
+    if (this.isWon) {
+      return;
+    }
+
+    if (this.xTurn) {
+      let max = -Infinity;
+      let bestMove = -1;
+      for (let i = 0; i < this.cells.length; i++) {
+        if (this.cells[i] === this.EMPTY) {
+          this.cells[i] = this.X_VALUE;
+          const score = this.evaluate(!this.xTurn);
+          this.cells[i] = this.EMPTY;
+          if (score > max) {
+            max = score;
+            bestMove = i;
+          }
+        }
+      }
+      this.clickCell(bestMove);
+    } else {
+      let min = Infinity;
+      let bestMove = -1;
+      for (let i = 0; i < this.cells.length; i++) {
+        if (this.cells[i] === this.EMPTY) {
+          this.cells[i] = this.O_VALUE;
+          const score = this.evaluate(!this.xTurn);
+          this.cells[i] = this.EMPTY;
+          if (score < min) {
+            min = score;
+            bestMove = i;
+          }
+        }
+      }
+      this.clickCell(bestMove);
+    }
+  }
+
+  debugCells() {
+    return this.cells.map((v) => this.debugCell(v)).join('');
+  }
+
+  debugCell(cell) {
+    if (cell === this.EMPTY) {
+      return ' ';
+    } else if (cell === this.X_VALUE) {
+      return 'X';
+    } else if (cell === this.O_VALUE) {
+      return 'O';
+    }
+    return '?';
+  }
 }
 
 const boardElement = document.getElementById('board');
 const infoText = document.getElementById('info');
+
 const restartButton = document.getElementById('restart');
+const bestButton = document.getElementById('best');
 
 const game = new TicTacToeGame(boardElement, infoText);
 
 restartButton.addEventListener('click', () => {
   game.reset();
+});
+
+bestButton.addEventListener('click', () => {
+  game.bestMove();
 });
