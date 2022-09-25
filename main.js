@@ -1,7 +1,9 @@
 class TicTacToeGame {
-  constructor(boardEl, infoEl) {
+  constructor(boardEl, infoEl, singleplayer = false) {
     this.boardEl = boardEl;
     this.infoEl = infoEl;
+    this.singleplayer = singleplayer;
+
     this.EMPTY = 1;
     this.X_VALUE = 2;
     this.O_VALUE = 3;
@@ -58,6 +60,10 @@ class TicTacToeGame {
     }
 
     this.render();
+
+    if (this.singleplayer && !this.isWon && !this.xTurn) {
+      this.bestMove();
+    }
   }
 
   initRenderCells() {
@@ -87,14 +93,24 @@ class TicTacToeGame {
 
   renderInfo() {
     if (!this.isWon) {
-      this.infoEl.innerHTML = `It's ${this.xTurn ? 'X' : 'O'} turn`;
+      if (this.singleplayer) {
+        this.infoEl.innerHTML = `It's ${this.xTurn ? 'Your' : 'Computer'} turn`;
+      } else {
+        this.infoEl.innerHTML = `It's ${this.xTurn ? 'X' : 'O'} turn`;
+      }
     } else {
       if (this.isWon === this.EMPTY) {
         this.infoEl.innerHTML = `It's a draw`;
       } else {
-        this.infoEl.innerHTML = `Game over! ${
-          this.isWon === this.X_VALUE ? 'X' : 'O'
-        } won`;
+        if (this.singleplayer) {
+          this.infoEl.innerHTML = `Game over! ${
+            this.isWon === this.X_VALUE ? 'You' : 'Computer'
+          } won`;
+        } else {
+          this.infoEl.innerHTML = `Game over! ${
+            this.isWon === this.X_VALUE ? 'X' : 'O'
+          } won`;
+        }
       }
     }
   }
@@ -142,9 +158,9 @@ class TicTacToeGame {
     const win = this.checkWin(this.cells, xTurn);
     // console.log(this.debugCells(), this.debugCell(win));
     if (win === this.X_VALUE) {
-      return 1;
+      return 1024;
     } else if (win === this.O_VALUE) {
-      return -1;
+      return -1024;
     } else if (win === this.EMPTY) {
       return 0;
     }
@@ -159,7 +175,7 @@ class TicTacToeGame {
           max = Math.max(max, score);
         }
       }
-      return max;
+      return max / 2;
     } else {
       let min = Infinity;
       for (let i = 0; i < this.cells.length; i++) {
@@ -170,7 +186,7 @@ class TicTacToeGame {
           min = Math.min(min, score);
         }
       }
-      return min;
+      return min / 2;
     }
   }
 
@@ -186,6 +202,7 @@ class TicTacToeGame {
         if (this.cells[i] === this.EMPTY) {
           this.cells[i] = this.X_VALUE;
           const score = this.evaluate(!this.xTurn);
+          // console.log(this.debugCells(), score);
           this.cells[i] = this.EMPTY;
           if (score > max) {
             max = score;
@@ -193,6 +210,10 @@ class TicTacToeGame {
           }
         }
       }
+      // console.log({
+      //   max,
+      //   bestMove,
+      // });
       this.clickCell(bestMove);
     } else {
       let min = Infinity;
@@ -201,6 +222,7 @@ class TicTacToeGame {
         if (this.cells[i] === this.EMPTY) {
           this.cells[i] = this.O_VALUE;
           const score = this.evaluate(!this.xTurn);
+          // console.log(this.debugCells(), score);
           this.cells[i] = this.EMPTY;
           if (score < min) {
             min = score;
@@ -208,6 +230,10 @@ class TicTacToeGame {
           }
         }
       }
+      // console.log({
+      //   min,
+      //   bestMove,
+      // });
       this.clickCell(bestMove);
     }
   }
@@ -232,14 +258,15 @@ const boardElement = document.getElementById('board');
 const infoText = document.getElementById('info');
 
 const restartButton = document.getElementById('restart');
-const bestButton = document.getElementById('best');
+const modeButton = document.getElementById('mode');
 
-const game = new TicTacToeGame(boardElement, infoText);
+const game = new TicTacToeGame(boardElement, infoText, true);
 
 restartButton.addEventListener('click', () => {
   game.reset();
 });
 
-bestButton.addEventListener('click', () => {
-  game.bestMove();
+modeButton.addEventListener('click', () => {
+  game.singleplayer = !game.singleplayer;
+  game.reset();
 });
